@@ -50,10 +50,11 @@ st.markdown("""
             border-left: 4px solid var(--primary);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
             margin-bottom: 16px;
-            min-height: 140px;
+            height: 140px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+            overflow: hidden;
         }
         
         .kpi-value {
@@ -61,6 +62,7 @@ st.markdown("""
             font-weight: 700;
             color: var(--primary);
             margin: 8px 0;
+            line-height: 1.2;
         }
         
         .kpi-label {
@@ -68,12 +70,19 @@ st.markdown("""
             color: var(--text-secondary);
             text-transform: uppercase;
             letter-spacing: 1px;
+            line-height: 1.3;
         }
         
         .kpi-subtitle {
             font-size: 12px;
             color: var(--text-secondary);
             margin-top: 8px;
+            line-height: 1.3;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
         }
         
         .status-badge {
