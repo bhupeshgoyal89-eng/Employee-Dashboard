@@ -24,18 +24,31 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Dark mode theme via CSS
+# Dark mode theme via CSS - Modern Fintech Design inspired by Stashfin
 st.markdown("""
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        
+        * {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        
         :root {
-            --primary: #00d4ff;
-            --success: #00ff88;
-            --warning: #ffa500;
-            --danger: #ff4757;
-            --dark-bg: #0f1419;
-            --card-bg: #1a1f2e;
-            --text-primary: #ffffff;
-            --text-secondary: #a0aec0;
+            --primary-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --secondary: #8b5cf6;
+            --success: #10b981;
+            --success-light: #34d399;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark-bg: #0f172a;
+            --dark-bg-secondary: #1e293b;
+            --card-bg: #1e293b;
+            --card-bg-hover: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --border-color: rgba(148, 163, 184, 0.1);
         }
         
         body {
@@ -43,34 +56,66 @@ st.markdown("""
             color: var(--text-primary);
         }
         
+        [data-testid="stAppViewContainer"] {
+            background: linear-gradient(135deg, #0f172a 0%, #1a1f3a 100%);
+        }
+        
+        [data-testid="stSidebarNav"] {
+            background: linear-gradient(180deg, var(--dark-bg-secondary) 0%, var(--card-bg) 100%);
+        }
+        
         .kpi-card {
-            background: linear-gradient(135deg, var(--card-bg) 0%, #252d3d 100%);
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%);
+            border: 1px solid var(--border-color);
             padding: 24px;
-            border-radius: 12px;
-            border-left: 4px solid var(--primary);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
             margin-bottom: 16px;
             height: 140px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
             overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+        
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.2) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        
+        .kpi-card:hover {
+            border-color: rgba(99, 102, 241, 0.3);
+            box-shadow: 0 12px 32px rgba(99, 102, 241, 0.15);
+            transform: translateY(-2px);
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0.1) 100%);
         }
         
         .kpi-value {
             font-size: 32px;
-            font-weight: 700;
-            color: var(--primary);
+            font-weight: 800;
+            background: linear-gradient(135deg, #818cf8 0%, #a78bfa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
             margin: 8px 0;
             line-height: 1.2;
         }
         
         .kpi-label {
-            font-size: 13px;
+            font-size: 12px;
             color: var(--text-secondary);
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 1.2px;
             line-height: 1.3;
+            font-weight: 600;
         }
         
         .kpi-subtitle {
@@ -87,78 +132,191 @@ st.markdown("""
         
         .status-badge {
             display: inline-block;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
+            padding: 8px 14px;
+            border-radius: 24px;
+            font-size: 11px;
+            font-weight: 700;
             text-transform: uppercase;
+            letter-spacing: 0.5px;
             margin-right: 8px;
+            backdrop-filter: blur(10px);
+            transition: all 0.2s;
         }
         
         .status-green {
-            background-color: rgba(0, 255, 136, 0.15);
-            color: var(--success);
-            border: 1px solid var(--success);
+            background-color: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.3);
         }
         
         .status-yellow {
-            background-color: rgba(255, 165, 0, 0.15);
-            color: var(--warning);
-            border: 1px solid var(--warning);
+            background-color: rgba(245, 158, 11, 0.15);
+            color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, 0.3);
         }
         
         .status-red {
-            background-color: rgba(255, 71, 87, 0.15);
-            color: var(--danger);
-            border: 1px solid var(--danger);
+            background-color: rgba(239, 68, 68, 0.15);
+            color: #fca5a5;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        
+        .status-badge:hover {
+            transform: scale(1.05);
         }
         
         .risk-banner {
-            background: rgba(255, 71, 87, 0.1);
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(245, 158, 11, 0.05) 100%);
+            border: 1px solid rgba(239, 68, 68, 0.2);
             border-left: 3px solid var(--danger);
-            padding: 12px 16px;
-            border-radius: 4px;
+            padding: 16px 20px;
+            border-radius: 12px;
             margin-bottom: 16px;
-            color: var(--danger);
+            color: #fca5a5;
             font-size: 13px;
+            font-weight: 500;
         }
         
         .success-banner {
-            background: rgba(0, 255, 136, 0.1);
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(52, 211, 153, 0.05) 100%);
+            border: 1px solid rgba(16, 185, 129, 0.2);
             border-left: 3px solid var(--success);
-            padding: 12px 16px;
-            border-radius: 4px;
+            padding: 16px 20px;
+            border-radius: 12px;
             margin-bottom: 16px;
-            color: var(--success);
+            color: #34d399;
             font-size: 13px;
+            font-weight: 500;
         }
         
         .section-header {
-            font-size: 24px;
-            font-weight: 700;
-            color: var(--text-primary);
-            margin: 24px 0 16px 0;
-            border-bottom: 2px solid rgba(0, 212, 255, 0.2);
-            padding-bottom: 12px;
+            font-size: 26px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 28px 0 20px 0;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 16px;
+            letter-spacing: -0.5px;
         }
         
         .ai-recommendation-card {
-            background: linear-gradient(135deg, rgba(0, 212, 255, 0.1) 0%, rgba(0, 255, 136, 0.05) 100%);
-            border: 1px solid rgba(0, 212, 255, 0.3);
-            padding: 20px;
-            border-radius: 12px;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%);
+            border: 1px solid var(--border-color);
+            padding: 24px;
+            border-radius: 16px;
             margin: 16px 0;
+            transition: all 0.3s ease;
+        }
+        
+        .ai-recommendation-card:hover {
+            border-color: rgba(99, 102, 241, 0.3);
+            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.1);
         }
         
         .promotion-readiness {
-            background: linear-gradient(135deg, rgba(0, 255, 136, 0.1) 0%, rgba(0, 212, 255, 0.05) 100%);
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(99, 102, 241, 0.05) 100%);
+            border: 1px solid rgba(16, 185, 129, 0.2);
         }
         
         .burnout-warning {
-            background: linear-gradient(135deg, rgba(255, 165, 0, 0.1) 0%, rgba(255, 71, 87, 0.05) 100%);
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+        
+        /* Button styling */
+        .stButton > button {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            font-size: 13px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+            text-transform: uppercase;
+        }
+        
+        .stButton > button:hover {
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
+            transform: translateY(-2px);
+        }
+        
+        .stButton > button:active {
+            transform: translateY(0);
+        }
+        
+        /* Input styling */
+        input, textarea {
+            background: var(--card-bg) !important;
+            border: 1px solid var(--border-color) !important;
+            color: var(--text-primary) !important;
+            border-radius: 10px !important;
+            padding: 12px 16px !important;
+            transition: all 0.2s !important;
+        }
+        
+        input:focus, textarea:focus {
+            border-color: rgba(99, 102, 241, 0.5) !important;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1) !important;
+        }
+        
+        /* Slider styling */
+        .stSlider > div > div {
+            color: var(--text-secondary);
+        }
+        
+        /* Tab styling */
+        .stTabs [data-baseweb="tab-list"] button {
+            border-radius: 10px 10px 0 0;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-weight: 600;
+            padding: 12px 20px;
+            transition: all 0.2s;
+        }
+        
+        .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(139, 92, 246, 0.1) 100%);
+            color: var(--text-primary);
+            border-bottom: 2px solid var(--primary);
+        }
+        
+        /* Dataframe styling */
+        [data-testid="stDataframe"] {
+            background: var(--card-bg);
+        }
+        
+        .dataframe {
+            background: var(--card-bg) !important;
+        }
+        
+        /* Radio button styling */
+        .stRadio > label {
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        
+        .stRadio > div > label {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%);
+            border: 1px solid var(--border-color);
+            padding: 12px 20px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            transition: all 0.2s;
+        }
+        
+        .stRadio > div > label:hover {
+            border-color: rgba(99, 102, 241, 0.3);
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0.1) 100%);
         }
     </style>
-""", unsafe_allow_html=True)
+""")
 
 # ============================================================================
 # MOCK DATA GENERATION
@@ -340,11 +498,11 @@ def generate_mock_social_score() -> Dict:
 def get_status_color(value: float, thresholds: Tuple[float, float] = (70, 85)) -> str:
     """Determine status color based on thresholds"""
     if value >= thresholds[1]:
-        return "#00ff88"  # Green
+        return "#10b981"  # Green
     elif value >= thresholds[0]:
-        return "#ffa500"  # Yellow
+        return "#f59e0b"  # Yellow
     else:
-        return "#ff4757"  # Red
+        return "#ef4444"  # Red
 
 def get_status_badge_class(value: float, thresholds: Tuple[float, float] = (70, 85)) -> str:
     """Get status badge CSS class"""
