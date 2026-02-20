@@ -316,7 +316,7 @@ st.markdown("""
             background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0.1) 100%);
         }
     </style>
-""")
+""", unsafe_allow_html=True)
 
 # ============================================================================
 # MOCK DATA GENERATION
