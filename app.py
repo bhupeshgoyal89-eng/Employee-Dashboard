@@ -1724,11 +1724,11 @@ def page_holidays():
     st.markdown('<div class="section-header">📋 Upcoming Holidays</div>', unsafe_allow_html=True)
     
     df_holidays = pd.DataFrame(holidays)
+    # Sort by date first (while still in YYYY-MM-DD format), then format for display
+    df_holidays = df_holidays.sort_values("date")
     df_holidays["date"] = pd.to_datetime(df_holidays["date"]).dt.strftime("%a, %b %d, %Y")
     
-    # Color code by type
     df_display = df_holidays.copy()
-    df_display = df_display.sort_values("date", key=lambda x: pd.to_datetime(x.str.replace("^.*,", ""), format=" %b %d, %Y"))
     
     # Create a nice display
     for idx, row in df_display.iterrows():
