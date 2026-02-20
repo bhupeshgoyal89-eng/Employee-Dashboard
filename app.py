@@ -501,6 +501,103 @@ def page_overview():
             for proj in perf_data["projects"]
         ])
         st.dataframe(projects_df, use_container_width=True, hide_index=True)
+        
+        # Update Project Section
+        st.write("\n---\n")
+        st.write("**📝 Update Project Status**")
+        
+        update_col1, update_col2, update_col3 = st.columns(3)
+        
+        with update_col1:
+            project_to_update = st.selectbox(
+                "Select Project",
+                [p["name"] for p in perf_data["projects"]],
+                key="project_select"
+            )
+        
+        with update_col2:
+            new_progress = st.number_input(
+                "Progress %",
+                min_value=0,
+                max_value=100,
+                value=50,
+                step=5,
+                key="progress_input"
+            )
+        
+        with update_col3:
+            new_status = st.selectbox(
+                "Status",
+                ["Open", "Closed", "On Hold"],
+                key="status_select"
+            )
+        
+        update_col_a, update_col_b = st.columns(2)
+        
+        with update_col_a:
+            new_update_text = st.text_input(
+                "Status Update",
+                placeholder="e.g., On track, Minor delays, Blocked",
+                key="update_text"
+            )
+        
+        with update_col_b:
+            if st.button("✅ Update Project", use_container_width=True):
+                # Find and update project
+                for proj in perf_data["projects"]:
+                    if proj["name"] == project_to_update:
+                        proj["progress"] = new_progress
+                        proj["status"] = new_status
+                        if new_update_text:
+                            proj["update"] = new_update_text
+                st.success(f"✅ Updated {project_to_update}!")
+                st.rerun()
+        
+        # Add New Project
+        st.write("\n**➕ Add New Project**")
+        
+        new_proj_col1, new_proj_col2 = st.columns(2)
+        
+        with new_proj_col1:
+            new_project_name = st.text_input(
+                "Project Name",
+                placeholder="Enter project name",
+                key="new_proj_name"
+            )
+            new_start_date = st.date_input(
+                "Start Date",
+                key="new_start_date"
+            )
+        
+        with new_proj_col2:
+            new_proj_progress = st.number_input(
+                "Initial Progress %",
+                min_value=0,
+                max_value=100,
+                value=0,
+                step=5,
+                key="new_proj_progress"
+            )
+            new_end_date = st.date_input(
+                "Target End Date",
+                key="new_end_date"
+            )
+        
+        if st.button("➕ Add Project", use_container_width=True):
+            if new_project_name and new_start_date and new_end_date:
+                new_project = {
+                    "name": new_project_name,
+                    "status": "Open",
+                    "progress": new_proj_progress,
+                    "start_date": new_start_date.strftime("%Y-%m-%d"),
+                    "end_date": new_end_date.strftime("%Y-%m-%d"),
+                    "update": "Just added"
+                }
+                perf_data["projects"].append(new_project)
+                st.success(f"✅ Added project: {new_project_name}")
+                st.rerun()
+            else:
+                st.warning("Please fill in all fields")
     
     with proj_col2:
         st.write("**Key Initiatives**")
@@ -511,6 +608,76 @@ def page_overview():
                 {init['status']}
             </span> {init['name']} — {init['contribution']}
             """, unsafe_allow_html=True)
+        
+        # Update Initiative Section
+        st.write("\n---\n")
+        st.write("**📝 Update Initiative**")
+        
+        init_update_col1, init_update_col2 = st.columns(2)
+        
+        with init_update_col1:
+            initiative_to_update = st.selectbox(
+                "Select Initiative",
+                [i["name"] for i in perf_data["initiatives"]],
+                key="init_select"
+            )
+        
+        with init_update_col2:
+            new_init_status = st.selectbox(
+                "Status",
+                ["Active", "Planning", "Paused", "Completed"],
+                key="init_status_select"
+            )
+        
+        init_contrib_col1, init_contrib_col2 = st.columns(2)
+        
+        with init_contrib_col1:
+            new_init_contrib = st.selectbox(
+                "Contribution Level",
+                ["High", "Medium", "Low"],
+                key="init_contrib_select"
+            )
+        
+        with init_contrib_col2:
+            if st.button("✅ Update Initiative", use_container_width=True):
+                for init in perf_data["initiatives"]:
+                    if init["name"] == initiative_to_update:
+                        init["status"] = new_init_status
+                        init["contribution"] = new_init_contrib
+                st.success(f"✅ Updated {initiative_to_update}!")
+                st.rerun()
+        
+        # Add New Initiative
+        st.write("\n**➕ Add New Initiative**")
+        
+        new_init_col1, new_init_col2 = st.columns(2)
+        
+        with new_init_col1:
+            new_initiative_name = st.text_input(
+                "Initiative Name",
+                placeholder="Enter initiative name",
+                key="new_init_name"
+            )
+        
+        with new_init_col2:
+            new_initiative_contrib = st.selectbox(
+                "Your Contribution",
+                ["High", "Medium", "Low"],
+                key="new_init_contrib"
+            )
+        
+        if st.button("➕ Add Initiative", use_container_width=True):
+            if new_initiative_name:
+                new_initiative = {
+                    "name": new_initiative_name,
+                    "status": "Active",
+                    "contribution": new_initiative_contrib
+                }
+                perf_data["initiatives"].append(new_initiative)
+                st.success(f"✅ Added initiative: {new_initiative_name}")
+                st.rerun()
+            else:
+                st.warning("Please enter an initiative name")
 
 # ============================================================================
 # PAGE: HEALTH STATUS
