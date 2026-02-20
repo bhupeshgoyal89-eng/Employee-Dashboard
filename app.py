@@ -397,7 +397,206 @@ def page_overview():
     # Charts section
     st.markdown('<div class="section-header">📈 Trends & Performance</div>', unsafe_allow_html=True)
     
-    # Upload Data Section
+    chart_col1, chart_col2 = st.columns(2)
+    
+    with chart_col1:
+        # Monthly Actual vs AOP
+        fig_trend = go.Figure()
+        fig_trend.add_trace(go.Scatter(
+            x=perf_data["months"],
+            y=perf_data["aop"],
+            name="AOP Target",
+            mode="lines+markers",
+            line=dict(color="#ffa500", width=2),
+            marker=dict(size=6)
+        ))
+        fig_trend.add_trace(go.Scatter(
+            x=perf_data["months"],
+            y=perf_data["actual"],
+            name="Actual Performance",
+            mode="lines+markers",
+            line=dict(color="#00ff88", width=3),
+            marker=dict(size=8),
+            fill="tozeroy",
+            fillcolor="rgba(0, 255, 136, 0.1)"
+        ))
+        fig_trend.update_layout(
+            title="Monthly Performance vs AOP",
+            xaxis_title="Month",
+            yaxis_title="% Achievement",
+            template="plotly_dark",
+            hovermode="x unified",
+            height=380,
+            margin=dict(l=40, r=40, t=40, b=60),
+            legend=dict(
+                orientation="h",
+                yanchor="top",
+                y=-0.15,
+                xanchor="center",
+                x=0.5
+            )
+        )
+        st.plotly_chart(fig_trend, use_container_width=True)
+    
+    with chart_col2:
+        # KRAs Performance
+        kras_df = pd.DataFrame(perf_data["kras"])
+        fig_kra = go.Figure(data=[
+            go.Bar(
+                x=kras_df["name"],
+                y=kras_df["actual"],
+                name="Actual",
+                marker_color="#00ff88"
+            ),
+            go.Bar(
+                x=kras_df["name"],
+                y=kras_df["target"],
+                name="Target",
+                marker_color="#a0aec0",
+                opacity=0.5
+            )
+        ])
+        fig_kra.update_layout(
+            title="KRA Performance",
+            xaxis_title="",
+            yaxis_title="% Achievement",
+            template="plotly_dark",
+            barmode="group",
+            height=380,
+            margin=dict(l=40, r=40, t=40, b=80),
+        )
+        st.plotly_chart(fig_kra, use_container_width=True)
+
+# ============================================================================
+# PAGE: HEALTH STATUS
+# ============================================================================
+
+def page_health_status():
+    """Health status tracking and wellness insights"""
+    
+    st.markdown('<div class="section-header">💚 Health & Wellness Tracker</div>', unsafe_allow_html=True)
+    
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        st.write("### Weekly Self-Assessment")
+        
+        stress = st.slider("Stress Level", 1, 10, 5, help="1 = Low stress, 10 = High stress")
+        sleep = st.slider("Sleep Quality", 1, 10, 7, help="1 = Poor, 10 = Excellent")
+        energy = st.slider("Energy Level", 1, 10, 6, help="1 = Exhausted, 10 = Peak energy")
+        satisfaction = st.slider("Work Satisfaction", 1, 10, 7, help="1 = Very low, 10 = Very high")
+        
+        note = st.text_area("Optional Note", placeholder="How are you feeling this week?", height=80)
+        
+        if st.button("Save Health Entry", use_container_width=True):
+            new_entry = {
+                "date": datetime.now().strftime("%b %d"),
+                "stress": stress,
+                "sleep": sleep,
+                "energy": energy,
+                "satisfaction": satisfaction,
+                "note": note
+            }
+            st.session_state.health_entries.append(new_entry)
+            st.success("✅ Health entry saved!")
+    
+    with col2:
+        # Current health index
+        latest = st.session_state.health_entries[-1]
+        health_index = np.mean([
+            (10 - latest["stress"]) / 10 * 100,
+            latest["sleep"] / 10 * 100,
+            latest["energy"] / 10 * 100,
+            latest["satisfaction"] / 10 * 100,
+        ])
+        
+        # Gauge chart
+        fig_gauge = go.Figure(go.Indicator(
+            mode="gauge+number",
+            value=health_index,
+            title={"text": "Health Index"},
+            domain={"x": [0, 1], "y": [0, 1]},
+            gauge={
+                "axis": {"range": [0, 100]},
+                "bar": {"color": "#00d4ff"},
+                "steps": [
+                    {"range": [0, 50], "color": "rgba(255, 71, 87, 0.3)"},
+                    {"range": [50, 75], "color": "rgba(255, 165, 0, 0.3)"},
+                    {"range": [75, 100], "color": "rgba(0, 255, 136, 0.3)"}
+                ],
+                "threshold": {
+                    "line": {"color": "red", "width": 4},
+                    "thickness": 0.75,
+                    "value": 90
+                }
+            }
+        ))
+        fig_gauge.update_layout(
+            template="plotly_dark",
+            height=300,
+            margin=dict(l=20, r=20, t=40, b=20),
+        )
+        st.plotly_chart(fig_gauge, use_container_width=True)
+    
+    # Health trend
+    st.markdown('<div class="section-header">📊 Wellness Trend</div>', unsafe_allow_html=True)
+    
+    health_df = pd.DataFrame(st.session_state.health_entries)
+    health_df["health_index"] = (
+        (10 - health_df["stress"]) / 10 * 100 +
+        health_df["sleep"] / 10 * 100 +
+        health_df["energy"] / 10 * 100 +
+        health_df["satisfaction"] / 10 * 100
+    ) / 4
+    
+    fig_trend = go.Figure()
+    fig_trend.add_trace(go.Scatter(
+        x=health_df["date"],
+        y=health_df["health_index"],
+        name="Health Index",
+        mode="lines+markers",
+        line=dict(color="#00d4ff", width=2),
+        marker=dict(size=8),
+        fill="tozeroy",
+        fillcolor="rgba(0, 212, 255, 0.1)"
+    ))
+    fig_trend.add_hline(y=75, line_dash="dash", line_color="#00ff88", annotation_text="Healthy Threshold")
+    fig_trend.add_hline(y=60, line_dash="dash", line_color="#ffa500", annotation_text="At Risk Threshold")
+    
+    fig_trend.update_layout(
+        title="8-Week Health Trend",
+        xaxis_title="Week",
+        yaxis_title="Health Index",
+        template="plotly_dark",
+        height=400,
+        hovermode="x unified"
+    )
+    st.plotly_chart(fig_trend, use_container_width=True)
+    
+    # AI Insight
+    if health_index < 70:
+        st.markdown(
+            f'<div class="risk-banner">🤖 AI Insight: Your wellness metrics suggest you could benefit from a workload review. Consider discussing with your manager.</div>',
+            unsafe_allow_html=True
+        )
+    else:
+        st.markdown(
+            f'<div class="success-banner">🤖 AI Insight: Your wellness metrics are strong. Keep maintaining this pace!</div>',
+            unsafe_allow_html=True
+        )
+
+# ============================================================================
+# PAGE: PERFORMANCE
+# ============================================================================
+
+def page_performance():
+    """Performance tracking and MIS"""
+    
+    st.markdown('<div class="section-header">📈 Performance & MIS</div>', unsafe_allow_html=True)
+    
+    perf_data = st.session_state.performance_data
+    
+    # ========== Upload Data Section ==========
     st.write("**📤 Upload Performance Data**")
     
     upload_col1, upload_col2, upload_col3 = st.columns(3)
@@ -473,78 +672,66 @@ def page_overview():
     
     st.markdown("---")
     
-    chart_col1, chart_col2 = st.columns(2)
+    # ========== KRAs Table ==========
+    st.write("### Key Result Areas (KRAs)")
     
-    with chart_col1:
-        # Monthly Actual vs AOP
-        fig_trend = go.Figure()
-        fig_trend.add_trace(go.Scatter(
-            x=perf_data["months"],
-            y=perf_data["aop"],
-            name="AOP Target",
-            mode="lines+markers",
-            line=dict(color="#ffa500", width=2),
-            marker=dict(size=6)
-        ))
-        fig_trend.add_trace(go.Scatter(
-            x=perf_data["months"],
-            y=perf_data["actual"],
-            name="Actual Performance",
-            mode="lines+markers",
-            line=dict(color="#00ff88", width=3),
-            marker=dict(size=8),
-            fill="tozeroy",
-            fillcolor="rgba(0, 255, 136, 0.1)"
-        ))
-        fig_trend.update_layout(
-            title="Monthly Performance vs AOP",
-            xaxis_title="Month",
-            yaxis_title="% Achievement",
-            template="plotly_dark",
-            hovermode="x unified",
-            height=380,
-            margin=dict(l=40, r=40, t=40, b=60),
-            legend=dict(
-                orientation="h",
-                yanchor="top",
-                y=-0.15,
-                xanchor="center",
-                x=0.5
-            )
-        )
-        st.plotly_chart(fig_trend, use_container_width=True)
+    kras_df = pd.DataFrame(perf_data["kras"])
+    kras_df["Achievement %"] = (kras_df["actual"] / kras_df["target"] * 100).round(1)
     
-    with chart_col2:
-        # KRAs Performance
-        kras_df = pd.DataFrame(perf_data["kras"])
-        fig_kra = go.Figure(data=[
-            go.Bar(
-                x=kras_df["name"],
-                y=kras_df["actual"],
-                name="Actual",
-                marker_color="#00ff88"
-            ),
-            go.Bar(
-                x=kras_df["name"],
-                y=kras_df["target"],
-                name="Target",
-                marker_color="#a0aec0",
-                opacity=0.5
-            )
-        ])
-        fig_kra.update_layout(
-            title="KRA Performance",
-            xaxis_title="",
-            yaxis_title="% Achievement",
-            template="plotly_dark",
-            barmode="group",
-            height=380,
-            margin=dict(l=40, r=40, t=40, b=80),
-        )
-        st.plotly_chart(fig_kra, use_container_width=True)
+    # Display with custom styling
+    for idx, row in kras_df.iterrows():
+        achievement = row["Achievement %"]
+        status_color = get_status_color(achievement, (90, 105))
+        status_class = get_status_badge_class(achievement, (90, 105))
+        status_text = get_status_text(achievement, (90, 105))
+        
+        col1, col2, col3, col4, col5 = st.columns([2, 1, 1, 1, 1])
+        with col1:
+            st.write(f"**{row['name']}**")
+        with col2:
+            st.write(f"Target: {row['target']}%")
+        with col3:
+            st.write(f"Actual: {row['actual']}%")
+        with col4:
+            st.write(f"{achievement:.1f}%")
+        with col5:
+            st.markdown(f'<span class="status-badge {status_class}">{status_text}</span>', unsafe_allow_html=True)
+        
+        st.progress(min(achievement / 110, 1.0))
+        st.markdown("---")
     
-    # Projects and Initiatives
-    st.markdown('<div class="section-header">🚀 Projects & Initiatives</div>', unsafe_allow_html=True)
+    # Projects Section
+    st.write("### Active Projects")
+    
+    projects_df = pd.DataFrame(perf_data["projects"])
+    for idx, proj in projects_df.iterrows():
+        col1, col2, col3 = st.columns([2, 1, 1])
+        with col1:
+            st.write(f"**{proj['name']}**")
+        with col2:
+            status_color = "#00ff88" if proj["status"] == "Completed" else "#00d4ff"
+            st.markdown(f'<span style="color: {status_color};">{proj["status"]}</span>', unsafe_allow_html=True)
+        with col3:
+            st.write(f"{proj['progress']}%")
+        
+        st.progress(proj["progress"] / 100)
+    
+    # Upload MIS
+    st.write("### Monthly Intelligence Sheet (MIS)")
+    st.info("📎 Upload your MIS for manager review")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        uploaded_file = st.file_uploader("Upload MIS", type=["xlsx", "pdf", "csv"])
+        if uploaded_file:
+            st.success(f"✅ Uploaded: {uploaded_file.name}")
+    
+    with col2:
+        if st.button("Share with Manager", use_container_width=True):
+            st.success("✅ MIS shared with your manager. They'll review shortly.")
+    
+    # ========== Projects and Initiatives Management ==========
+    st.markdown('<div class="section-header">🚀 Projects & Initiatives Management</div>', unsafe_allow_html=True)
     
     proj_col1, proj_col2 = st.columns(2)
     
@@ -754,193 +941,6 @@ def page_overview():
                 st.rerun()
             else:
                 st.warning("Please enter an initiative name")
-
-# ============================================================================
-# PAGE: HEALTH STATUS
-# ============================================================================
-
-def page_health_status():
-    """Health status tracking and wellness insights"""
-    
-    st.markdown('<div class="section-header">💚 Health & Wellness Tracker</div>', unsafe_allow_html=True)
-    
-    col1, col2 = st.columns([2, 1])
-    
-    with col1:
-        st.write("### Weekly Self-Assessment")
-        
-        stress = st.slider("Stress Level", 1, 10, 5, help="1 = Low stress, 10 = High stress")
-        sleep = st.slider("Sleep Quality", 1, 10, 7, help="1 = Poor, 10 = Excellent")
-        energy = st.slider("Energy Level", 1, 10, 6, help="1 = Exhausted, 10 = Peak energy")
-        satisfaction = st.slider("Work Satisfaction", 1, 10, 7, help="1 = Very low, 10 = Very high")
-        
-        note = st.text_area("Optional Note", placeholder="How are you feeling this week?", height=80)
-        
-        if st.button("Save Health Entry", use_container_width=True):
-            new_entry = {
-                "date": datetime.now().strftime("%b %d"),
-                "stress": stress,
-                "sleep": sleep,
-                "energy": energy,
-                "satisfaction": satisfaction,
-                "note": note
-            }
-            st.session_state.health_entries.append(new_entry)
-            st.success("✅ Health entry saved!")
-    
-    with col2:
-        # Current health index
-        latest = st.session_state.health_entries[-1]
-        health_index = np.mean([
-            (10 - latest["stress"]) / 10 * 100,
-            latest["sleep"] / 10 * 100,
-            latest["energy"] / 10 * 100,
-            latest["satisfaction"] / 10 * 100,
-        ])
-        
-        # Gauge chart
-        fig_gauge = go.Figure(go.Indicator(
-            mode="gauge+number",
-            value=health_index,
-            title={"text": "Health Index"},
-            domain={"x": [0, 1], "y": [0, 1]},
-            gauge={
-                "axis": {"range": [0, 100]},
-                "bar": {"color": "#00d4ff"},
-                "steps": [
-                    {"range": [0, 50], "color": "rgba(255, 71, 87, 0.3)"},
-                    {"range": [50, 75], "color": "rgba(255, 165, 0, 0.3)"},
-                    {"range": [75, 100], "color": "rgba(0, 255, 136, 0.3)"}
-                ],
-                "threshold": {
-                    "line": {"color": "red", "width": 4},
-                    "thickness": 0.75,
-                    "value": 90
-                }
-            }
-        ))
-        fig_gauge.update_layout(
-            template="plotly_dark",
-            height=300,
-            margin=dict(l=20, r=20, t=40, b=20),
-        )
-        st.plotly_chart(fig_gauge, use_container_width=True)
-    
-    # Health trend
-    st.markdown('<div class="section-header">📊 Wellness Trend</div>', unsafe_allow_html=True)
-    
-    health_df = pd.DataFrame(st.session_state.health_entries)
-    health_df["health_index"] = (
-        (10 - health_df["stress"]) / 10 * 100 +
-        health_df["sleep"] / 10 * 100 +
-        health_df["energy"] / 10 * 100 +
-        health_df["satisfaction"] / 10 * 100
-    ) / 4
-    
-    fig_trend = go.Figure()
-    fig_trend.add_trace(go.Scatter(
-        x=health_df["date"],
-        y=health_df["health_index"],
-        name="Health Index",
-        mode="lines+markers",
-        line=dict(color="#00d4ff", width=2),
-        marker=dict(size=8),
-        fill="tozeroy",
-        fillcolor="rgba(0, 212, 255, 0.1)"
-    ))
-    fig_trend.add_hline(y=75, line_dash="dash", line_color="#00ff88", annotation_text="Healthy Threshold")
-    fig_trend.add_hline(y=60, line_dash="dash", line_color="#ffa500", annotation_text="At Risk Threshold")
-    
-    fig_trend.update_layout(
-        title="8-Week Health Trend",
-        xaxis_title="Week",
-        yaxis_title="Health Index",
-        template="plotly_dark",
-        height=400,
-        hovermode="x unified"
-    )
-    st.plotly_chart(fig_trend, use_container_width=True)
-    
-    # AI Insight
-    if health_index < 70:
-        st.markdown(
-            f'<div class="risk-banner">🤖 AI Insight: Your wellness metrics suggest you could benefit from a workload review. Consider discussing with your manager.</div>',
-            unsafe_allow_html=True
-        )
-    else:
-        st.markdown(
-            f'<div class="success-banner">🤖 AI Insight: Your wellness metrics are strong. Keep maintaining this pace!</div>',
-            unsafe_allow_html=True
-        )
-
-# ============================================================================
-# PAGE: PERFORMANCE
-# ============================================================================
-
-def page_performance():
-    """Performance tracking and MIS"""
-    
-    st.markdown('<div class="section-header">📈 Performance & MIS</div>', unsafe_allow_html=True)
-    
-    perf_data = st.session_state.performance_data
-    
-    # KRAs Table
-    st.write("### Key Result Areas (KRAs)")
-    
-    kras_df = pd.DataFrame(perf_data["kras"])
-    kras_df["Achievement %"] = (kras_df["actual"] / kras_df["target"] * 100).round(1)
-    
-    # Display with custom styling
-    for idx, row in kras_df.iterrows():
-        achievement = row["Achievement %"]
-        status_color = get_status_color(achievement, (90, 105))
-        status_class = get_status_badge_class(achievement, (90, 105))
-        status_text = get_status_text(achievement, (90, 105))
-        
-        col1, col2, col3, col4, col5 = st.columns([2, 1, 1, 1, 1])
-        with col1:
-            st.write(f"**{row['name']}**")
-        with col2:
-            st.write(f"Target: {row['target']}%")
-        with col3:
-            st.write(f"Actual: {row['actual']}%")
-        with col4:
-            st.write(f"{achievement:.1f}%")
-        with col5:
-            st.markdown(f'<span class="status-badge {status_class}">{status_text}</span>', unsafe_allow_html=True)
-        
-        st.progress(min(achievement / 110, 1.0))
-        st.markdown("---")
-    
-    # Projects Section
-    st.write("### Active Projects")
-    
-    projects_df = pd.DataFrame(perf_data["projects"])
-    for idx, proj in projects_df.iterrows():
-        col1, col2, col3 = st.columns([2, 1, 1])
-        with col1:
-            st.write(f"**{proj['name']}**")
-        with col2:
-            status_color = "#00ff88" if proj["status"] == "Completed" else "#00d4ff"
-            st.markdown(f'<span style="color: {status_color};">{proj["status"]}</span>', unsafe_allow_html=True)
-        with col3:
-            st.write(f"{proj['progress']}%")
-        
-        st.progress(proj["progress"] / 100)
-    
-    # Upload MIS
-    st.write("### Monthly Intelligence Sheet (MIS)")
-    st.info("📎 Upload your MIS for manager review")
-    
-    col1, col2 = st.columns(2)
-    with col1:
-        uploaded_file = st.file_uploader("Upload MIS", type=["xlsx", "pdf", "csv"])
-        if uploaded_file:
-            st.success(f"✅ Uploaded: {uploaded_file.name}")
-    
-    with col2:
-        if st.button("Share with Manager", use_container_width=True):
-            st.success("✅ MIS shared with your manager. They'll review shortly.")
     
     # Performance Summary
     st.markdown('<div class="section-header">📊 Summary</div>', unsafe_allow_html=True)
