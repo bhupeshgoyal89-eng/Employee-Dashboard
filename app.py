@@ -492,6 +492,78 @@ def page_overview():
             margin=dict(l=40, r=40, t=40, b=80),
         )
         st.plotly_chart(fig_kra, use_container_width=True)
+    
+    # Projects & Initiatives section
+    st.markdown('<div class="section-header">🚀 Projects & Initiatives</div>', unsafe_allow_html=True)
+    
+    proj_col1, proj_col2 = st.columns(2)
+    
+    with proj_col1:
+        # Active Projects Progress
+        active_projects = [p for p in perf_data["projects"] if p["status"] == "Open"]
+        if active_projects:
+            projects_df = pd.DataFrame(active_projects)
+            fig_projects = go.Figure(data=[
+                go.Bar(
+                    y=projects_df["name"],
+                    x=projects_df["progress"],
+                    orientation="h",
+                    marker=dict(
+                        color=projects_df["progress"],
+                        colorscale="Viridis",
+                        showscale=False
+                    ),
+                    text=projects_df["progress"].astype(str) + "%",
+                    textposition="auto",
+                )
+            ])
+            fig_projects.update_layout(
+                title="Active Projects Progress",
+                xaxis_title="Progress %",
+                yaxis_title="",
+                template="plotly_dark",
+                height=300,
+                margin=dict(l=150, r=40, t=40, b=40),
+            )
+            st.plotly_chart(fig_projects, use_container_width=True)
+        else:
+            st.info("No active projects at the moment.")
+    
+    with proj_col2:
+        # Initiatives Status
+        initiatives = perf_data["initiatives"]
+        if initiatives:
+            # Create status breakdown
+            initiative_status = pd.Series([i["status"] for i in initiatives]).value_counts()
+            
+            # Color mapping for status
+            status_colors = {
+                "Active": "#00ff88",
+                "Planning": "#ffa500",
+                "On Hold": "#ff4757",
+                "Completed": "#00d4ff"
+            }
+            colors = [status_colors.get(status, "#a0aec0") for status in initiative_status.index]
+            
+            fig_initiatives = go.Figure(data=[
+                go.Pie(
+                    labels=initiative_status.index,
+                    values=initiative_status.values,
+                    marker=dict(colors=colors),
+                    hole=0.3,
+                    textposition="auto",
+                    hovertemplate="<b>%{label}</b><br>Count: %{value}<extra></extra>"
+                )
+            ])
+            fig_initiatives.update_layout(
+                title="Initiatives Status Distribution",
+                template="plotly_dark",
+                height=300,
+                margin=dict(l=40, r=40, t=40, b=40),
+            )
+            st.plotly_chart(fig_initiatives, use_container_width=True)
+        else:
+            st.info("No initiatives tracked.")
 
 # ============================================================================
 # PAGE: HEALTH STATUS
