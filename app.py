@@ -590,145 +590,134 @@ def page_health_status():
 # ============================================================================
 
 def page_performance():
-    """Performance tracking and MIS"""
+    """Performance tracking and MIS generation"""
     
     st.markdown('<div class="section-header">📈 Performance & MIS</div>', unsafe_allow_html=True)
     
     perf_data = st.session_state.performance_data
     
-    # ========== Upload Data Section ==========
-    st.write("**📤 Upload Performance Data**")
+    # ========== Edit Monthly Performance ==========
+    st.markdown('<div class="section-header">📊 Edit Monthly Performance (Actual vs AOP)</div>', unsafe_allow_html=True)
     
-    upload_col1, upload_col2, upload_col3 = st.columns(3)
+    st.write("**Current Data:**")
+    monthly_display = pd.DataFrame({
+        "Month": perf_data["months"],
+        "AOP Target": perf_data["aop"],
+        "Actual": perf_data["actual"]
+    })
+    st.dataframe(monthly_display, use_container_width=True, hide_index=True)
     
-    with upload_col1:
-        monthly_file = st.file_uploader(
-            "Upload Monthly Performance (CSV)",
-            type=["csv", "xlsx"],
-            key="monthly_perf_upload",
-            help="Columns: month, aop, actual"
+    st.write("\n**📝 Update Monthly Data**")
+    
+    edit_col1, edit_col2, edit_col3 = st.columns(3)
+    
+    with edit_col1:
+        month_idx = st.selectbox(
+            "Select Month",
+            range(len(perf_data["months"])),
+            format_func=lambda i: perf_data["months"][i],
+            key="month_select_perf"
         )
-        if monthly_file:
-            try:
-                if monthly_file.name.endswith('.csv'):
-                    monthly_df = pd.read_csv(monthly_file)
-                else:
-                    monthly_df = pd.read_excel(monthly_file)
-                
-                if set(['month', 'aop', 'actual']).issubset(monthly_df.columns):
-                    perf_data["months"] = monthly_df["month"].tolist()
-                    perf_data["aop"] = monthly_df["aop"].tolist()
-                    perf_data["actual"] = monthly_df["actual"].tolist()
-                    st.success("✅ Monthly performance data updated!")
-                else:
-                    st.error("Required columns: month, aop, actual")
-            except Exception as e:
-                st.error(f"Error reading file: {e}")
     
-    with upload_col2:
-        kra_file = st.file_uploader(
-            "Upload KRA Data (CSV)",
-            type=["csv", "xlsx"],
-            key="kra_upload",
-            help="Columns: name, target, actual"
+    with edit_col2:
+        new_aop = st.number_input(
+            "AOP Target %",
+            min_value=0,
+            max_value=200,
+            value=perf_data["aop"][month_idx],
+            step=1,
+            key="aop_input"
         )
-        if kra_file:
-            try:
-                if kra_file.name.endswith('.csv'):
-                    kra_df_upload = pd.read_csv(kra_file)
-                else:
-                    kra_df_upload = pd.read_excel(kra_file)
-                
-                if set(['name', 'target', 'actual']).issubset(kra_df_upload.columns):
-                    perf_data["kras"] = kra_df_upload.to_dict('records')
-                    st.success("✅ KRA data updated!")
-                else:
-                    st.error("Required columns: name, target, actual")
-            except Exception as e:
-                st.error(f"Error reading file: {e}")
     
-    with upload_col3:
-        if st.button("🔄 Reset to Mock Data", use_container_width=True):
-            st.session_state.performance_data = generate_mock_performance()
-            st.success("✅ Reset to mock data")
-            st.rerun()
+    with edit_col3:
+        new_actual = st.number_input(
+            "Actual %",
+            min_value=0,
+            max_value=200,
+            value=perf_data["actual"][month_idx],
+            step=1,
+            key="actual_input"
+        )
     
-    with st.expander("📋 CSV Format Guide"):
-        st.write("**Monthly Performance CSV Format:**")
-        sample_monthly = pd.DataFrame({
-            "month": ["Sep", "Oct", "Nov", "Dec", "Jan", "Feb"],
-            "aop": [95, 98, 102, 105, 108, 110],
-            "actual": [92, 101, 100, 108, 112, 115]
-        })
-        st.dataframe(sample_monthly, use_container_width=True, hide_index=True)
-        
-        st.write("\n**KRA Data CSV Format:**")
-        sample_kra = pd.DataFrame({
-            "name": ["Revenue Generation", "Client Retention", "Risk Management"],
-            "target": [100, 98, 95],
-            "actual": [115, 102, 94]
-        })
-        st.dataframe(sample_kra, use_container_width=True, hide_index=True)
+    if st.button("✅ Update Month Data", use_container_width=True):
+        perf_data["aop"][month_idx] = new_aop
+        perf_data["actual"][month_idx] = new_actual
+        st.success(f"✅ Updated {perf_data['months'][month_idx]}")
+        st.rerun()
     
     st.markdown("---")
     
-    # ========== KRAs Table ==========
-    st.write("### Key Result Areas (KRAs)")
+    # ========== Edit KRA Data ==========
+    st.markdown('<div class="section-header">🎯 Edit KRA Data</div>', unsafe_allow_html=True)
     
     kras_df = pd.DataFrame(perf_data["kras"])
-    kras_df["Achievement %"] = (kras_df["actual"] / kras_df["target"] * 100).round(1)
+    st.write("**Current KRAs:**")
+    st.dataframe(kras_df, use_container_width=True, hide_index=True)
     
-    # Display with custom styling
-    for idx, row in kras_df.iterrows():
-        achievement = row["Achievement %"]
-        status_color = get_status_color(achievement, (90, 105))
-        status_class = get_status_badge_class(achievement, (90, 105))
-        status_text = get_status_text(achievement, (90, 105))
-        
-        col1, col2, col3, col4, col5 = st.columns([2, 1, 1, 1, 1])
-        with col1:
-            st.write(f"**{row['name']}**")
-        with col2:
-            st.write(f"Target: {row['target']}%")
-        with col3:
-            st.write(f"Actual: {row['actual']}%")
-        with col4:
-            st.write(f"{achievement:.1f}%")
-        with col5:
-            st.markdown(f'<span class="status-badge {status_class}">{status_text}</span>', unsafe_allow_html=True)
-        
-        st.progress(min(achievement / 110, 1.0))
-        st.markdown("---")
+    st.write("\n**📝 Update KRA**")
     
-    # Projects Section
-    st.write("### Active Projects")
+    kra_col1, kra_col2, kra_col3 = st.columns(3)
     
-    projects_df = pd.DataFrame(perf_data["projects"])
-    for idx, proj in projects_df.iterrows():
-        col1, col2, col3 = st.columns([2, 1, 1])
-        with col1:
-            st.write(f"**{proj['name']}**")
-        with col2:
-            status_color = "#00ff88" if proj["status"] == "Completed" else "#00d4ff"
-            st.markdown(f'<span style="color: {status_color};">{proj["status"]}</span>', unsafe_allow_html=True)
-        with col3:
-            st.write(f"{proj['progress']}%")
-        
-        st.progress(proj["progress"] / 100)
+    with kra_col1:
+        kra_idx = st.selectbox(
+            "Select KRA",
+            range(len(perf_data["kras"])),
+            format_func=lambda i: perf_data["kras"][i]["name"],
+            key="kra_select"
+        )
     
-    # Upload MIS
-    st.write("### Monthly Intelligence Sheet (MIS)")
-    st.info("📎 Upload your MIS for manager review")
+    with kra_col2:
+        new_kra_target = st.number_input(
+            "Target %",
+            min_value=0,
+            max_value=200,
+            value=perf_data["kras"][kra_idx]["target"],
+            step=1,
+            key="kra_target_input"
+        )
     
-    col1, col2 = st.columns(2)
-    with col1:
-        uploaded_file = st.file_uploader("Upload MIS", type=["xlsx", "pdf", "csv"])
-        if uploaded_file:
-            st.success(f"✅ Uploaded: {uploaded_file.name}")
+    with kra_col3:
+        new_kra_actual = st.number_input(
+            "Actual %",
+            min_value=0,
+            max_value=200,
+            value=perf_data["kras"][kra_idx]["actual"],
+            step=1,
+            key="kra_actual_input"
+        )
     
-    with col2:
-        if st.button("Share with Manager", use_container_width=True):
-            st.success("✅ MIS shared with your manager. They'll review shortly.")
+    if st.button("✅ Update KRA", use_container_width=True):
+        perf_data["kras"][kra_idx]["target"] = new_kra_target
+        perf_data["kras"][kra_idx]["actual"] = new_kra_actual
+        st.success(f"✅ Updated {perf_data['kras'][kra_idx]['name']}")
+        st.rerun()
+    
+    st.write("\n**➕ Add New KRA**")
+    
+    add_kra_col1, add_kra_col2, add_kra_col3 = st.columns(3)
+    
+    with add_kra_col1:
+        new_kra_name = st.text_input("KRA Name", placeholder="Enter KRA", key="new_kra_name")
+    
+    with add_kra_col2:
+        new_kra_tgt = st.number_input("Target %", min_value=0, max_value=200, value=100, key="new_kra_tgt")
+    
+    with add_kra_col3:
+        new_kra_act = st.number_input("Actual %", min_value=0, max_value=200, value=100, key="new_kra_act")
+    
+    if st.button("➕ Add KRA", use_container_width=True):
+        if new_kra_name:
+            perf_data["kras"].append({
+                "name": new_kra_name,
+                "target": new_kra_tgt,
+                "actual": new_kra_act
+            })
+            st.success(f"✅ Added KRA: {new_kra_name}")
+            st.rerun()
+        else:
+            st.warning("Please enter a KRA name")
+    
+    st.markdown("---")
     
     # ========== Projects and Initiatives Management ==========
     st.markdown('<div class="section-header">🚀 Projects & Initiatives Management</div>', unsafe_allow_html=True)
@@ -942,19 +931,88 @@ def page_performance():
             else:
                 st.warning("Please enter an initiative name")
     
-    # Performance Summary
-    st.markdown('<div class="section-header">📊 Summary</div>', unsafe_allow_html=True)
+    # ========== MIS Generation ==========
+    st.markdown('<div class="section-header">📋 Generate MIS Report</div>', unsafe_allow_html=True)
     
-    avg_achievement = kras_df["Achievement %"].mean()
+    st.write("Generate Monthly Intelligence Sheet based on all 4 inputs:")
+    st.write("1. ✅ Monthly Performance (Actual vs AOP)")
+    st.write("2. ✅ KRA Data")
+    st.write("3. ✅ Project Updates")
+    st.write("4. ✅ Initiatives")
     
-    if avg_achievement >= 105:
-        summary = "🚀 Exceeding targets across most KRAs. Strong execution."
-    elif avg_achievement >= 95:
-        summary = "✅ On track with targets. Solid performance."
-    else:
-        summary = "⚠️ Some KRAs below target. Review and adjust strategy."
-    
-    st.write(summary)
+    if st.button("📊 Generate MIS Report", use_container_width=True):
+        # Generate MIS from all 4 sources
+        kras_df = pd.DataFrame(perf_data["kras"])
+        kras_df["Achievement %"] = (kras_df["actual"] / kras_df["target"] * 100).round(1)
+        
+        mis_report = f"""
+        ═══════════════════════════════════════════════════════════════════════════════
+        MONTHLY INTELLIGENCE SHEET (MIS)
+        ═══════════════════════════════════════════════════════════════════════════════
+        
+        Employee: {st.session_state.employee_name}
+        Department: {st.session_state.department}
+        Date: {datetime.now().strftime("%B %d, %Y")}
+        
+        ───────────────────────────────────────────────────────────────────────────────
+        1. MONTHLY PERFORMANCE OVERVIEW
+        ───────────────────────────────────────────────────────────────────────────────
+        Latest Month: {perf_data["months"][-1]}
+        AOP Target: {perf_data["aop"][-1]}%
+        Actual Achievement: {perf_data["actual"][-1]}%
+        Performance vs Target: {((perf_data["actual"][-1] / perf_data["aop"][-1]) * 100):.1f}%
+        
+        ───────────────────────────────────────────────────────────────────────────────
+        2. KEY RESULT AREAS (KRAs) PERFORMANCE
+        ───────────────────────────────────────────────────────────────────────────────
+        """
+        
+        for idx, row in kras_df.iterrows():
+            mis_report += f"\n{row['name']:<35} Target: {row['target']:>5}%  Actual: {row['actual']:>5}%  Achievement: {row['Achievement %']:>6.1f}%"
+        
+        avg_achievement = kras_df["Achievement %"].mean()
+        mis_report += f"\n{'─' * 80}\nAverage KRA Achievement: {avg_achievement:.1f}%\n"
+        
+        mis_report += """
+        ───────────────────────────────────────────────────────────────────────────────
+        3. ACTIVE PROJECTS
+        ───────────────────────────────────────────────────────────────────────────────
+        """
+        
+        for proj in perf_data["projects"]:
+            mis_report += f"\n{proj['name']:<40} Status: {proj['status']:<10} Progress: {proj['progress']:>3}%  Update: {proj['update']}"
+        
+        mis_report += """
+        
+        ───────────────────────────────────────────────────────────────────────────────
+        4. KEY INITIATIVES
+        ───────────────────────────────────────────────────────────────────────────────
+        """
+        
+        for init in perf_data["initiatives"]:
+            mis_report += f"\n{init['name']:<40} Status: {init['status']:<12} Contribution: {init['contribution']}"
+        
+        mis_report += f"""
+        
+        ═══════════════════════════════════════════════════════════════════════════════
+        """
+        
+        st.success("✅ MIS Report Generated!")
+        st.text_area("📋 MIS Report", value=mis_report, height=400, disabled=True)
+        
+        # Download button
+        col1, col2 = st.columns(2)
+        with col1:
+            st.download_button(
+                label="📥 Download MIS (Text)",
+                data=mis_report,
+                file_name=f"MIS_{st.session_state.employee_name}_{datetime.now().strftime('%Y%m%d')}.txt",
+                mime="text/plain"
+            )
+        
+        with col2:
+            if st.button("📧 Share with Manager", use_container_width=True):
+                st.success("✅ MIS Report shared with your manager!")
 
 # ============================================================================
 # PAGE: 360 FEEDBACK
