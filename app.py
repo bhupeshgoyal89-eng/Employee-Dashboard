@@ -397,6 +397,82 @@ def page_overview():
     # Charts section
     st.markdown('<div class="section-header">📈 Trends & Performance</div>', unsafe_allow_html=True)
     
+    # Upload Data Section
+    st.write("**📤 Upload Performance Data**")
+    
+    upload_col1, upload_col2, upload_col3 = st.columns(3)
+    
+    with upload_col1:
+        monthly_file = st.file_uploader(
+            "Upload Monthly Performance (CSV)",
+            type=["csv", "xlsx"],
+            key="monthly_perf_upload",
+            help="Columns: month, aop, actual"
+        )
+        if monthly_file:
+            try:
+                if monthly_file.name.endswith('.csv'):
+                    monthly_df = pd.read_csv(monthly_file)
+                else:
+                    monthly_df = pd.read_excel(monthly_file)
+                
+                if set(['month', 'aop', 'actual']).issubset(monthly_df.columns):
+                    perf_data["months"] = monthly_df["month"].tolist()
+                    perf_data["aop"] = monthly_df["aop"].tolist()
+                    perf_data["actual"] = monthly_df["actual"].tolist()
+                    st.success("✅ Monthly performance data updated!")
+                else:
+                    st.error("Required columns: month, aop, actual")
+            except Exception as e:
+                st.error(f"Error reading file: {e}")
+    
+    with upload_col2:
+        kra_file = st.file_uploader(
+            "Upload KRA Data (CSV)",
+            type=["csv", "xlsx"],
+            key="kra_upload",
+            help="Columns: name, target, actual"
+        )
+        if kra_file:
+            try:
+                if kra_file.name.endswith('.csv'):
+                    kra_df_upload = pd.read_csv(kra_file)
+                else:
+                    kra_df_upload = pd.read_excel(kra_file)
+                
+                if set(['name', 'target', 'actual']).issubset(kra_df_upload.columns):
+                    perf_data["kras"] = kra_df_upload.to_dict('records')
+                    st.success("✅ KRA data updated!")
+                else:
+                    st.error("Required columns: name, target, actual")
+            except Exception as e:
+                st.error(f"Error reading file: {e}")
+    
+    with upload_col3:
+        if st.button("🔄 Reset to Mock Data", use_container_width=True):
+            st.session_state.performance_data = generate_mock_performance()
+            st.success("✅ Reset to mock data")
+            st.rerun()
+    
+    with st.expander("📋 CSV Format Guide"):
+        st.write("**Monthly Performance CSV Format:**")
+        sample_monthly = pd.DataFrame({
+            "month": ["Sep", "Oct", "Nov", "Dec", "Jan", "Feb"],
+            "aop": [95, 98, 102, 105, 108, 110],
+            "actual": [92, 101, 100, 108, 112, 115]
+        })
+        st.dataframe(sample_monthly, use_container_width=True, hide_index=True)
+        
+        st.write("\n**KRA Data CSV Format:**")
+        sample_kra = pd.DataFrame({
+            "name": ["Revenue Generation", "Client Retention", "Risk Management"],
+            "target": [100, 98, 95],
+            "actual": [115, 102, 94]
+        })
+        st.dataframe(sample_kra, use_container_width=True, hide_index=True)
+    
+    st.markdown("---")
+    
     chart_col1, chart_col2 = st.columns(2)
     
     with chart_col1:
