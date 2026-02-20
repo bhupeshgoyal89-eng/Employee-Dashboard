@@ -42,13 +42,13 @@ st.markdown("""
             --success-light: #34d399;
             --warning: #f59e0b;
             --danger: #ef4444;
-            --dark-bg: #0f172a;
-            --dark-bg-secondary: #1e293b;
-            --card-bg: #1e293b;
-            --card-bg-hover: #334155;
-            --text-primary: #f1f5f9;
-            --text-secondary: #cbd5e1;
-            --border-color: rgba(148, 163, 184, 0.1);
+            --dark-bg: #ffffff;
+            --dark-bg-secondary: #f8fafc;
+            --card-bg: #f1f5f9;
+            --card-bg-hover: #e2e8f0;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --border-color: rgba(51, 65, 85, 0.1);
         }
         
         body {
@@ -57,7 +57,7 @@ st.markdown("""
         }
         
         [data-testid="stAppViewContainer"] {
-            background: linear-gradient(135deg, #0f172a 0%, #1a1f3a 100%);
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
         }
         
         [data-testid="stSidebarNav"] {
@@ -65,11 +65,11 @@ st.markdown("""
         }
         
         .kpi-card {
-            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%);
-            border: 1px solid var(--border-color);
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(139, 92, 246, 0.04) 100%);
+            border: 2px solid rgba(99, 102, 241, 0.2);
             padding: 24px;
             border-radius: 16px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
             margin-bottom: 16px;
             height: 140px;
             display: flex;
@@ -87,15 +87,15 @@ st.markdown("""
             right: -50%;
             width: 100%;
             height: 100%;
-            background: radial-gradient(circle, rgba(99, 102, 241, 0.2) 0%, transparent 70%);
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
             pointer-events: none;
         }
         
         .kpi-card:hover {
-            border-color: rgba(99, 102, 241, 0.3);
-            box-shadow: 0 12px 32px rgba(99, 102, 241, 0.15);
+            border-color: rgba(99, 102, 241, 0.4);
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.15);
             transform: translateY(-2px);
-            background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0.1) 100%);
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(139, 92, 246, 0.08) 100%);
         }
         
         .kpi-value {
@@ -522,7 +522,7 @@ def get_status_text(value: float, thresholds: Tuple[float, float] = (70, 85)) ->
     else:
         return "Attention Needed"
 
-def kpi_card(label: str, value: str, subtitle: str = "", status_color: str = "#00d4ff") -> str:
+def kpi_card(label: str, value: str, subtitle: str = "", status_color: str = "#0ea5e9") -> str:
     """Generate KPI card HTML"""
     return f"""
     <div class="kpi-card" style="border-left-color: {status_color}">
@@ -624,7 +624,7 @@ def page_overview():
             y=perf_data["aop"],
             name="AOP Target",
             mode="lines+markers",
-            line=dict(color="#ffa500", width=2),
+            line=dict(color="#f59e0b", width=2),
             marker=dict(size=6)
         ))
         fig_trend.add_trace(go.Scatter(
@@ -632,7 +632,7 @@ def page_overview():
             y=perf_data["actual"],
             name="Actual Performance",
             mode="lines+markers",
-            line=dict(color="#00ff88", width=3),
+            line=dict(color="#10b981", width=3),
             marker=dict(size=8),
             fill="tozeroy",
             fillcolor="rgba(0, 255, 136, 0.1)"
@@ -641,7 +641,7 @@ def page_overview():
             title="Monthly Performance vs AOP",
             xaxis_title="Month",
             yaxis_title="% Achievement",
-            template="plotly_dark",
+            template="plotly",
             hovermode="x unified",
             height=380,
             margin=dict(l=40, r=40, t=40, b=60),
@@ -663,7 +663,7 @@ def page_overview():
                 x=kras_df["name"],
                 y=kras_df["actual"],
                 name="Actual",
-                marker_color="#00ff88"
+                marker_color="#10b981"
             ),
             go.Bar(
                 x=kras_df["name"],
@@ -677,7 +677,7 @@ def page_overview():
             title="KRA Performance",
             xaxis_title="",
             yaxis_title="% Achievement",
-            template="plotly_dark",
+            template="plotly",
             barmode="group",
             height=380,
             margin=dict(l=40, r=40, t=40, b=80),
@@ -712,7 +712,7 @@ def page_overview():
                 title="Active Projects Progress",
                 xaxis_title="Progress %",
                 yaxis_title="",
-                template="plotly_dark",
+                template="plotly",
                 height=300,
                 margin=dict(l=150, r=40, t=40, b=40),
             )
@@ -728,10 +728,10 @@ def page_overview():
             
             # Color mapping for status
             status_colors = {
-                "Active": "#00ff88",
-                "Planning": "#ffa500",
-                "On Hold": "#ff4757",
-                "Completed": "#00d4ff"
+                "Active": "#10b981",
+                "Planning": "#f59e0b",
+                "On Hold": "#ef4444",
+                "Completed": "#0ea5e9"
             }
             
             fig_initiatives = go.Figure()
@@ -753,7 +753,7 @@ def page_overview():
                 title="Initiatives: Status & Progress",
                 xaxis_title="Progress %",
                 yaxis_title="",
-                template="plotly_dark",
+                template="plotly",
                 height=300,
                 margin=dict(l=180, r=40, t=40, b=40),
                 xaxis=dict(range=[0, 100])
@@ -813,7 +813,7 @@ def page_health_status():
             domain={"x": [0, 1], "y": [0, 1]},
             gauge={
                 "axis": {"range": [0, 100]},
-                "bar": {"color": "#00d4ff"},
+                "bar": {"color": "#0ea5e9"},
                 "steps": [
                     {"range": [0, 50], "color": "rgba(255, 71, 87, 0.3)"},
                     {"range": [50, 75], "color": "rgba(255, 165, 0, 0.3)"},
@@ -827,7 +827,7 @@ def page_health_status():
             }
         ))
         fig_gauge.update_layout(
-            template="plotly_dark",
+            template="plotly",
             height=300,
             margin=dict(l=20, r=20, t=40, b=20),
         )
@@ -850,19 +850,19 @@ def page_health_status():
         y=health_df["health_index"],
         name="Health Index",
         mode="lines+markers",
-        line=dict(color="#00d4ff", width=2),
+        line=dict(color="#0ea5e9", width=2),
         marker=dict(size=8),
         fill="tozeroy",
         fillcolor="rgba(0, 212, 255, 0.1)"
     ))
-    fig_trend.add_hline(y=75, line_dash="dash", line_color="#00ff88", annotation_text="Healthy Threshold")
-    fig_trend.add_hline(y=60, line_dash="dash", line_color="#ffa500", annotation_text="At Risk Threshold")
+    fig_trend.add_hline(y=75, line_dash="dash", line_color="#10b981", annotation_text="Healthy Threshold")
+    fig_trend.add_hline(y=60, line_dash="dash", line_color="#f59e0b", annotation_text="At Risk Threshold")
     
     fig_trend.update_layout(
         title="8-Week Health Trend",
         xaxis_title="Week",
         yaxis_title="Health Index",
-        template="plotly_dark",
+        template="plotly",
         height=400,
         hovermode="x unified"
     )
@@ -1026,7 +1026,7 @@ def page_performance():
     with proj_col1:
         st.write("**Active Projects**")
         for proj in perf_data["projects"]:
-            status_color = "#00ff88" if proj["progress"] == 100 else "#00d4ff"
+            status_color = "#10b981" if proj["progress"] == 100 else "#0ea5e9"
             st.markdown(f"""
             <div style="margin-bottom: 16px;">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
@@ -1153,7 +1153,7 @@ def page_performance():
     with proj_col2:
         st.write("**Key Initiatives**")
         for init in perf_data["initiatives"]:
-            status_color = "#00ff88" if init["status"] == "Active" else "#ffa500"
+            status_color = "#10b981" if init["status"] == "Active" else "#f59e0b"
             st.markdown(f"""
             <span class="status-badge {get_status_badge_class(80 if init['status'] == 'Active' else 50)}">
                 {init['status']}
@@ -1325,54 +1325,70 @@ def page_360_feedback():
     col1, col2 = st.columns(2)
     
     with col1:
-        st.write("### Submit Feedback for a Colleague")
+        st.write("### Submit Objective Feedback")
         
-        colleague_name = st.text_input("Colleague Name")
+        colleague_name = st.text_input("Colleague/Manager Name")
         colleague_role = st.selectbox("Relationship", ["Manager", "Peer", "Direct Report"])
-        feedback_text = st.text_area("Feedback", placeholder="Share constructive feedback...", height=120)
+        
+        st.write("#### Rate the Following (1-5):")
+        
+        # Objective rating questions
+        q1 = st.slider("Quality of meeting contributions", 1, 5, 3, key="q1")
+        q2 = st.slider("Knowledge sharing & education", 1, 5, 3, key="q2")
+        q3 = st.slider("Responsiveness & support", 1, 5, 3, key="q3")
+        q4 = st.slider("Communication clarity", 1, 5, 3, key="q4")
+        q5 = st.slider("Collaboration & teamwork", 1, 5, 3, key="q5")
+        
+        comments = st.text_area("Additional Comments (Optional)", placeholder="Share specific examples or feedback...", height=80)
         
         if st.button("Submit Feedback", use_container_width=True):
-            if colleague_name and feedback_text:
-                # Simulate sentiment analysis
-                sentiment_score = random.uniform(0.65, 0.98)
+            if colleague_name:
+                # Calculate average rating
+                avg_rating = (q1 + q2 + q3 + q4 + q5) / 5
+                sentiment_score = avg_rating / 5  # Convert to 0-1 scale
+                
+                feedback_text = f"Meeting Contributions: {q1}/5 | Knowledge Sharing: {q2}/5 | Responsiveness: {q3}/5 | Communication: {q4}/5 | Collaboration: {q5}/5"
+                if comments:
+                    feedback_text += f"\n\nComments: {comments}"
+                
                 new_feedback = {
                     "from": colleague_name,
                     "role": colleague_role,
                     "sentiment": sentiment_score,
-                    "text": feedback_text
+                    "text": feedback_text,
+                    "ratings": {"meeting": q1, "knowledge": q2, "responsiveness": q3, "communication": q4, "collaboration": q5}
                 }
                 st.session_state.feedback_received.append(new_feedback)
-                st.success(f"✅ Feedback submitted! Sentiment: {sentiment_score:.2f}")
+                st.success(f"✅ Feedback submitted! Average Rating: {avg_rating:.1f}/5")
             else:
-                st.warning("Please fill in all fields")
+                st.warning("Please enter colleague/manager name")
     
     with col2:
         st.write("### Sentiment Overview")
         
         feedback_list = st.session_state.feedback_received
         sentiments = [f["sentiment"] for f in feedback_list]
-        avg_sentiment = np.mean(sentiments)
+        avg_sentiment = np.mean(sentiments) if sentiments else 0
         
-        st.metric("Average Sentiment Score", f"{avg_sentiment:.2f}/1.0", f"+{random.uniform(0.01, 0.05):.2f}")
+        st.metric("Average Rating Score", f"{avg_sentiment*5:.1f}/5.0", f"+{random.uniform(0.01, 0.05):.2f}")
         
         # Sentiment distribution
-        sentiment_bins = np.array([0, 0.3, 0.6, 0.8, 1.0])
-        sentiment_labels = ["Poor", "Fair", "Good", "Excellent"]
+        sentiment_labels = ["Poor (1-2)", "Fair (2-3)", "Good (3-4)", "Excellent (4-5)"]
         
         fig_sentiment = go.Figure(data=[
             go.Pie(
                 labels=sentiment_labels,
                 values=[
-                    len([s for s in sentiments if s < 0.3]),
-                    len([s for s in sentiments if 0.3 <= s < 0.6]),
+                    len([s for s in sentiments if s < 0.4]),
+                    len([s for s in sentiments if 0.4 <= s < 0.6]),
                     len([s for s in sentiments if 0.6 <= s < 0.8]),
                     len([s for s in sentiments if s >= 0.8]),
                 ],
-                marker=dict(colors=["#ff4757", "#ffa500", "#00d4ff", "#00ff88"])
+                marker=dict(colors=["#ef4444", "#f59e0b", "#6366f1", "#10b981"])
             )
         ])
         fig_sentiment.update_layout(
-            template="plotly_dark",
+            template="plotly",
             height=300,
             showlegend=True
         )
@@ -1384,7 +1400,7 @@ def page_360_feedback():
     for feedback in st.session_state.feedback_received[-5:]:  # Show last 5
         sentiment = feedback["sentiment"]
         sentiment_text = "Excellent" if sentiment >= 0.8 else "Good" if sentiment >= 0.6 else "Fair"
-        sentiment_color = "#00ff88" if sentiment >= 0.8 else "#00d4ff" if sentiment >= 0.6 else "#ffa500"
+        sentiment_color = "#10b981" if sentiment >= 0.8 else "#0ea5e9" if sentiment >= 0.6 else "#f59e0b"
         
         st.markdown(f"""
         <div style="background: rgba(255, 255, 255, 0.05); padding: 16px; border-radius: 8px; margin-bottom: 12px; border-left: 3px solid {sentiment_color};">
@@ -1472,7 +1488,7 @@ def page_social_score():
     ))
     
     fig_radar.update_layout(
-        template="plotly_dark",
+        template="plotly",
         polar=dict(radialaxis=dict(visible=True, range=[0, 100])),
         height=400,
         margin=dict(l=80, r=80, t=40, b=40)
@@ -1607,7 +1623,7 @@ def page_ai_appraisal():
                 title={"text": "Promotion Readiness"},
                 gauge={
                     "axis": {"range": [0, 100]},
-                    "bar": {"color": "#00d4ff"},
+                    "bar": {"color": "#0ea5e9"},
                     "steps": [
                         {"range": [0, 50], "color": "rgba(255, 71, 87, 0.3)"},
                         {"range": [50, 75], "color": "rgba(255, 165, 0, 0.3)"},
@@ -1616,7 +1632,7 @@ def page_ai_appraisal():
                 }
             ))
             fig_gauge.update_layout(
-                template="plotly_dark",
+                template="plotly",
                 height=300,
                 margin=dict(l=20, r=20, t=40, b=20),
             )
@@ -1647,9 +1663,9 @@ def page_ai_appraisal():
         
         with col1:
             increment_colors = {
-                "Exceptional (A+)": "#00ff88",
-                "High Performer (A)": "#00d4ff",
-                "Strong (B+)": "#ffa500",
+                "Exceptional (A+)": "#10b981",
+                "High Performer (A)": "#0ea5e9",
+                "Strong (B+)": "#f59e0b",
                 "Standard (B)": "#a0aec0",
             }
             
@@ -1706,7 +1722,7 @@ def page_ai_appraisal():
             st.markdown('<div class="section-header">🚨 Risk Areas & Development Focus</div>', unsafe_allow_html=True)
             
             for risk in appraisal["risks"]:
-                risk_color = "#ff4757" if "🔴" in risk else "#ffa500"
+                risk_color = "#ef4444" if "🔴" in risk else "#f59e0b"
                 st.markdown(f"""
                 <div style="background: rgba(255, 71, 87, 0.05); padding: 12px; border-radius: 6px; margin-bottom: 8px; border-left: 3px solid {risk_color};">
                     {risk}
@@ -1776,7 +1792,7 @@ def page_attendance():
             "Total Days",
             f"{total_days}",
             "Last 20 days",
-            "#00d4ff"
+            "#0ea5e9"
         ), unsafe_allow_html=True)
     
     with col2:
@@ -1784,7 +1800,7 @@ def page_attendance():
             "Present/WFH",
             f"{present_days}",
             f"{(present_days/total_days)*100:.0f}%",
-            "#00ff88"
+            "#10b981"
         ), unsafe_allow_html=True)
     
     with col3:
@@ -1792,7 +1808,7 @@ def page_attendance():
             "Leaves",
             f"{leaves}",
             f"{(leaves/total_days)*100:.0f}%",
-            "#ffa500"
+            "#f59e0b"
         ), unsafe_allow_html=True)
     
     with col4:
@@ -1824,9 +1840,9 @@ def page_attendance():
     
     status_counts = df_attendance["status"].value_counts()
     status_colors = {
-        "Present": "#00ff88",
-        "WFH": "#00d4ff",
-        "Leave": "#ffa500",
+        "Present": "#10b981",
+        "WFH": "#0ea5e9",
+        "Leave": "#f59e0b",
         "Holiday": "#a0aec0"
     }
     colors = [status_colors.get(status, "#666") for status in status_counts.index]
@@ -1842,7 +1858,7 @@ def page_attendance():
     ])
     fig_attendance.update_layout(
         title="Attendance Status Distribution",
-        template="plotly_dark",
+        template="plotly",
         height=350,
         margin=dict(l=40, r=40, t=40, b=40),
     )
@@ -1867,7 +1883,7 @@ def page_holidays():
             "National Holidays",
             f"{len(national_holidays)}",
             f"Government holidays",
-            "#00d4ff"
+            "#0ea5e9"
         ), unsafe_allow_html=True)
     
     with col2:
@@ -1875,7 +1891,7 @@ def page_holidays():
             "Company Holidays",
             f"{len(company_holidays)}",
             f"Organizational holidays",
-            "#00ff88"
+            "#10b981"
         ), unsafe_allow_html=True)
     
     # Holiday listing
@@ -1890,7 +1906,7 @@ def page_holidays():
     
     # Create a nice display
     for idx, row in df_display.iterrows():
-        color = "#00d4ff" if row["type"] == "National" else "#00ff88"
+        color = "#0ea5e9" if row["type"] == "National" else "#10b981"
         holiday_type_badge = f'<span style="background: rgba(0, 255, 136, 0.2); color: #00ff88; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600;">{row["type"]}</span>' if row["type"] == "Company" else f'<span style="background: rgba(0, 212, 255, 0.2); color: #00d4ff; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600;">{row["type"]}</span>'
         
         st.markdown(f"""
@@ -1907,7 +1923,7 @@ def page_holidays():
     st.markdown('<div class="section-header">📊 Holiday Distribution</div>', unsafe_allow_html=True)
     
     type_counts = df_holidays["type"].value_counts()
-    type_colors = {"National": "#00d4ff", "Company": "#00ff88"}
+    type_colors = {"National": "#0ea5e9", "Company": "#10b981"}
     colors = [type_colors.get(t, "#a0aec0") for t in type_counts.index]
     
     fig_holidays = go.Figure(data=[
@@ -1921,7 +1937,7 @@ def page_holidays():
     ])
     fig_holidays.update_layout(
         title="Holiday Type Breakdown",
-        template="plotly_dark",
+        template="plotly",
         height=350,
         margin=dict(l=40, r=40, t=40, b=40),
     )
