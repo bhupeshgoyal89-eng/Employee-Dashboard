@@ -50,6 +50,10 @@ st.markdown("""
             border-left: 4px solid var(--primary);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
             margin-bottom: 16px;
+            min-height: 140px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
         
         .kpi-value {
