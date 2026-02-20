@@ -204,6 +204,10 @@ def initialize_session_state():
         st.session_state.feedback_received = generate_mock_feedback()
     if "performance_data" not in st.session_state:
         st.session_state.performance_data = generate_mock_performance()
+    if "attendance_records" not in st.session_state:
+        st.session_state.attendance_records = generate_mock_attendance()
+    if "holidays" not in st.session_state:
+        st.session_state.holidays = generate_mock_holidays()
     if "current_page" not in st.session_state:
         st.session_state.current_page = "Overview"
 
@@ -230,8 +234,8 @@ def generate_mock_performance() -> Dict:
             {"name": "Risk Profiling AI", "status": "Open", "progress": 58, "start_date": "2025-12-01", "end_date": "2026-04-15", "update": "Minor delays"},
         ],
         "initiatives": [
-            {"name": "Mentorship Program", "status": "Active", "contribution": "High"},
-            {"name": "Process Automation", "status": "Planning", "contribution": "Medium"},
+            {"name": "Mentorship Program", "status": "Active", "contribution": "High", "progress": 85},
+            {"name": "Process Automation", "status": "Planning", "contribution": "Medium", "progress": 30},
         ]
     }
 
@@ -255,6 +259,35 @@ def generate_mock_health_history() -> List[Dict]:
             ])
         })
     return entries
+
+def generate_mock_attendance() -> List[Dict]:
+    """Generate mock attendance records"""
+    records = []
+    for i in range(20, 0, -1):
+        date = (datetime.now() - timedelta(days=i)).strftime("%Y-%m-%d")
+        status = random.choice(["Present", "Present", "Present", "WFH", "Leave", "Holiday"])
+        records.append({
+            "date": date,
+            "status": status,
+            "hours_worked": random.choice([8, 8.5, 9]) if status == "Present" else (8 if status == "WFH" else 0)
+        })
+    return records
+
+def generate_mock_holidays() -> List[Dict]:
+    """Generate mock holiday calendar"""
+    holidays = [
+        {"date": "2026-02-26", "name": "Republic Day", "type": "National"},
+        {"date": "2026-03-17", "name": "Holi", "type": "National"},
+        {"date": "2026-04-10", "name": "Good Friday", "type": "National"},
+        {"date": "2026-04-14", "name": "Ambedkar Jayanti", "type": "National"},
+        {"date": "2026-05-01", "name": "Labour Day", "type": "National"},
+        {"date": "2026-05-15", "name": "Vesak Purnima", "type": "National"},
+        {"date": "2026-06-20", "name": "Founder's Day", "type": "Company"},
+        {"date": "2026-08-15", "name": "Independence Day", "type": "National"},
+        {"date": "2026-08-28", "name": "Janmashtami", "type": "National"},
+        {"date": "2026-09-26", "name": "Dussehra", "type": "National"},
+    ]
+    return holidays
 
 def generate_mock_feedback() -> List[Dict]:
     """Generate mock 360 feedback"""
@@ -530,11 +563,10 @@ def page_overview():
             st.info("No active projects at the moment.")
     
     with proj_col2:
-        # Initiatives Status
+        # Initiatives Status & Progress
         initiatives = perf_data["initiatives"]
         if initiatives:
-            # Create status breakdown
-            initiative_status = pd.Series([i["status"] for i in initiatives]).value_counts()
+            initiatives_df = pd.DataFrame(initiatives)
             
             # Color mapping for status
             status_colors = {
@@ -543,23 +575,30 @@ def page_overview():
                 "On Hold": "#ff4757",
                 "Completed": "#00d4ff"
             }
-            colors = [status_colors.get(status, "#a0aec0") for status in initiative_status.index]
             
-            fig_initiatives = go.Figure(data=[
-                go.Pie(
-                    labels=initiative_status.index,
-                    values=initiative_status.values,
-                    marker=dict(colors=colors),
-                    hole=0.3,
+            fig_initiatives = go.Figure()
+            
+            for idx, initiative in enumerate(initiatives):
+                color = status_colors.get(initiative["status"], "#a0aec0")
+                fig_initiatives.add_trace(go.Bar(
+                    y=[initiative["name"]],
+                    x=[initiative["progress"]],
+                    orientation="h",
+                    marker=dict(color=color),
+                    text=f"{initiative['progress']}% - {initiative['status']}",
                     textposition="auto",
-                    hovertemplate="<b>%{label}</b><br>Count: %{value}<extra></extra>"
-                )
-            ])
+                    hovertemplate=f"<b>{initiative['name']}</b><br>Progress: {initiative['progress']}%<br>Status: {initiative['status']}<br>Contribution: {initiative['contribution']}<extra></extra>",
+                    showlegend=False
+                ))
+            
             fig_initiatives.update_layout(
-                title="Initiatives Status Distribution",
+                title="Initiatives: Status & Progress",
+                xaxis_title="Progress %",
+                yaxis_title="",
                 template="plotly_dark",
                 height=300,
-                margin=dict(l=40, r=40, t=40, b=40),
+                margin=dict(l=180, r=40, t=40, b=40),
+                xaxis=dict(range=[0, 100])
             )
             st.plotly_chart(fig_initiatives, use_container_width=True)
         else:
@@ -1553,6 +1592,185 @@ def page_ai_appraisal():
 
 # ============================================================================
 # MAIN APP
+
+# ============================================================================
+# PAGE: ATTENDANCE & HOLIDAYS
+# ============================================================================
+
+def page_attendance():
+    """Attendance tracking and holiday calendar"""
+    
+    st.markdown('<div class="section-header">📅 Attendance Records</div>', unsafe_allow_html=True)
+    
+    attendance_records = st.session_state.attendance_records
+    
+    # Summary cards
+    col1, col2, col3, col4 = st.columns(4)
+    
+    df_attendance = pd.DataFrame(attendance_records)
+    total_days = len(df_attendance)
+    present_days = len(df_attendance[df_attendance["status"].isin(["Present", "WFH"])])
+    leaves = len(df_attendance[df_attendance["status"] == "Leave"])
+    holidays = len(df_attendance[df_attendance["status"] == "Holiday"])
+    
+    with col1:
+        st.markdown(kpi_card(
+            "Total Days",
+            f"{total_days}",
+            "Last 20 days",
+            "#00d4ff"
+        ), unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown(kpi_card(
+            "Present/WFH",
+            f"{present_days}",
+            f"{(present_days/total_days)*100:.0f}%",
+            "#00ff88"
+        ), unsafe_allow_html=True)
+    
+    with col3:
+        st.markdown(kpi_card(
+            "Leaves",
+            f"{leaves}",
+            f"{(leaves/total_days)*100:.0f}%",
+            "#ffa500"
+        ), unsafe_allow_html=True)
+    
+    with col4:
+        st.markdown(kpi_card(
+            "Holidays",
+            f"{holidays}",
+            f"{(holidays/total_days)*100:.0f}%",
+            "#a0aec0"
+        ), unsafe_allow_html=True)
+    
+    # Attendance table
+    st.markdown('<div class="section-header">📊 Detailed Attendance</div>', unsafe_allow_html=True)
+    
+    # Create display dataframe
+    display_df = df_attendance.copy()
+    display_df["date"] = pd.to_datetime(display_df["date"]).dt.strftime("%a, %b %d")
+    display_df["hours_worked"] = display_df["hours_worked"].apply(lambda x: f"{x} hrs" if x > 0 else "—")
+    
+    st.dataframe(
+        display_df[["date", "status", "hours_worked"]].rename(
+            columns={"date": "Date", "status": "Status", "hours_worked": "Hours"}
+        ),
+        use_container_width=True,
+        hide_index=True
+    )
+    
+    # Status distribution chart
+    st.markdown('<div class="section-header">📈 Attendance Trend</div>', unsafe_allow_html=True)
+    
+    status_counts = df_attendance["status"].value_counts()
+    status_colors = {
+        "Present": "#00ff88",
+        "WFH": "#00d4ff",
+        "Leave": "#ffa500",
+        "Holiday": "#a0aec0"
+    }
+    colors = [status_colors.get(status, "#666") for status in status_counts.index]
+    
+    fig_attendance = go.Figure(data=[
+        go.Pie(
+            labels=status_counts.index,
+            values=status_counts.values,
+            marker=dict(colors=colors),
+            hole=0.3,
+            textposition="auto"
+        )
+    ])
+    fig_attendance.update_layout(
+        title="Attendance Status Distribution",
+        template="plotly_dark",
+        height=350,
+        margin=dict(l=40, r=40, t=40, b=40),
+    )
+    st.plotly_chart(fig_attendance, use_container_width=True)
+
+
+def page_holidays():
+    """Holiday calendar view"""
+    
+    st.markdown('<div class="section-header">🗓️ Holiday Calendar</div>', unsafe_allow_html=True)
+    
+    holidays = st.session_state.holidays
+    
+    # Holiday type summary
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        national_holidays = [h for h in holidays if h["type"] == "National"]
+        company_holidays = [h for h in holidays if h["type"] == "Company"]
+        
+        st.markdown(kpi_card(
+            "National Holidays",
+            f"{len(national_holidays)}",
+            f"Government holidays",
+            "#00d4ff"
+        ), unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown(kpi_card(
+            "Company Holidays",
+            f"{len(company_holidays)}",
+            f"Organizational holidays",
+            "#00ff88"
+        ), unsafe_allow_html=True)
+    
+    # Holiday listing
+    st.markdown('<div class="section-header">📋 Upcoming Holidays</div>', unsafe_allow_html=True)
+    
+    df_holidays = pd.DataFrame(holidays)
+    df_holidays["date"] = pd.to_datetime(df_holidays["date"]).dt.strftime("%a, %b %d, %Y")
+    
+    # Color code by type
+    df_display = df_holidays.copy()
+    df_display = df_display.sort_values("date", key=lambda x: pd.to_datetime(x.str.replace("^.*,", ""), format=" %b %d, %Y"))
+    
+    # Create a nice display
+    for idx, row in df_display.iterrows():
+        color = "#00d4ff" if row["type"] == "National" else "#00ff88"
+        holiday_type_badge = f'<span style="background: rgba(0, 255, 136, 0.2); color: #00ff88; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600;">{row["type"]}</span>' if row["type"] == "Company" else f'<span style="background: rgba(0, 212, 255, 0.2); color: #00d4ff; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600;">{row["type"]}</span>'
+        
+        st.markdown(f"""
+        <div style="background: rgba(26, 31, 46, 0.5); padding: 16px; border-radius: 8px; border-left: 4px solid {color}; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <div style="color: #ffffff; font-weight: 600; margin-bottom: 4px;">{row['name']}</div>
+                <div style="color: #a0aec0; font-size: 12px;">{row['date']}</div>
+            </div>
+            {holiday_type_badge}
+        </div>
+        """, unsafe_allow_html=True)
+    
+    # Holiday distribution pie chart
+    st.markdown('<div class="section-header">📊 Holiday Distribution</div>', unsafe_allow_html=True)
+    
+    type_counts = df_holidays["type"].value_counts()
+    type_colors = {"National": "#00d4ff", "Company": "#00ff88"}
+    colors = [type_colors.get(t, "#a0aec0") for t in type_counts.index]
+    
+    fig_holidays = go.Figure(data=[
+        go.Pie(
+            labels=type_counts.index,
+            values=type_counts.values,
+            marker=dict(colors=colors),
+            hole=0.3,
+            textposition="auto"
+        )
+    ])
+    fig_holidays.update_layout(
+        title="Holiday Type Breakdown",
+        template="plotly_dark",
+        height=350,
+        margin=dict(l=40, r=40, t=40, b=40),
+    )
+    st.plotly_chart(fig_holidays, use_container_width=True)
+
+# ============================================================================
+# MAIN APPLICATION
 # ============================================================================
 
 def main():
@@ -1583,6 +1801,8 @@ def main():
             "🤝 360 Feedback": "Feedback",
             "👥 Social Score": "Social",
             "🤖 AI Appraisal": "Appraisal",
+            "📅 Attendance": "Attendance",
+            "🗓️ Holidays": "Holidays",
         }
         
         selected = st.radio("Navigation", list(pages.keys()))
@@ -1605,6 +1825,10 @@ def main():
         page_social_score()
     elif st.session_state.current_page == "Appraisal":
         page_ai_appraisal()
+    elif st.session_state.current_page == "Attendance":
+        page_attendance()
+    elif st.session_state.current_page == "Holidays":
+        page_holidays()
 
 if __name__ == "__main__":
     main()
