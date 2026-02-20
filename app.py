@@ -1322,11 +1322,51 @@ def page_360_feedback():
     
     st.markdown('<div class="section-header">🤝 360 Feedback & Sentiment</div>', unsafe_allow_html=True)
     
+    feedback_list = st.session_state.feedback_received
+    sentiments = [f["sentiment"] for f in feedback_list]
+    avg_sentiment = np.mean(sentiments) if sentiments else 0
+    
+    # Sentiment overview at top - full width
+    st.markdown('<div class="section-header" style="margin-top: 0;">📊 Sentiment Overview</div>', unsafe_allow_html=True)
+    
+    col_metric1, col_metric2 = st.columns(2)
+    
+    with col_metric1:
+        st.metric("Average Rating Score", f"{avg_sentiment*5:.1f}/5.0", f"+{random.uniform(0.01, 0.05):.2f}")
+    
+    with col_metric2:
+        st.metric("Total Feedback Received", f"{len(feedback_list)}", "ratings")
+    
+    # Large sentiment chart
+    sentiment_labels = ["Poor (1-2)", "Fair (2-3)", "Good (3-4)", "Excellent (4-5)"]
+    
+    fig_sentiment = go.Figure(data=[
+        go.Pie(
+            labels=sentiment_labels,
+            values=[
+                len([s for s in sentiments if s < 0.4]),
+                len([s for s in sentiments if 0.4 <= s < 0.6]),
+                len([s for s in sentiments if 0.6 <= s < 0.8]),
+                len([s for s in sentiments if s >= 0.8]),
+            ],
+            marker=dict(colors=["#ef4444", "#f59e0b", "#6366f1", "#10b981"]),
+            textposition="auto"
+        )
+    ])
+    fig_sentiment.update_layout(
+        template="plotly",
+        height=450,
+        showlegend=True,
+        margin=dict(l=40, r=40, t=40, b=40)
+    )
+    st.plotly_chart(fig_sentiment, use_container_width=True)
+    
+    # Submit feedback form below
+    st.markdown('<div class="section-header">✍️ Submit Objective Feedback</div>', unsafe_allow_html=True)
+    
     col1, col2 = st.columns(2)
     
     with col1:
-        st.write("### Submit Objective Feedback")
-        
         colleague_name = st.text_input("Colleague/Manager Name")
         colleague_role = st.selectbox("Relationship", ["Manager", "Peer", "Direct Report"])
         
@@ -1364,35 +1404,43 @@ def page_360_feedback():
                 st.warning("Please enter colleague/manager name")
     
     with col2:
-        st.write("### Sentiment Overview")
+        st.write("#### Rating Breakdown")
         
-        feedback_list = st.session_state.feedback_received
-        sentiments = [f["sentiment"] for f in feedback_list]
-        avg_sentiment = np.mean(sentiments) if sentiments else 0
-        
-        st.metric("Average Rating Score", f"{avg_sentiment*5:.1f}/5.0", f"+{random.uniform(0.01, 0.05):.2f}")
-        
-        # Sentiment distribution
-        sentiment_labels = ["Poor (1-2)", "Fair (2-3)", "Good (3-4)", "Excellent (4-5)"]
-        
-        fig_sentiment = go.Figure(data=[
-            go.Pie(
-                labels=sentiment_labels,
-                values=[
-                    len([s for s in sentiments if s < 0.4]),
-                    len([s for s in sentiments if 0.4 <= s < 0.6]),
-                    len([s for s in sentiments if 0.6 <= s < 0.8]),
-                    len([s for s in sentiments if s >= 0.8]),
-                ],
-                marker=dict(colors=["#ef4444", "#f59e0b", "#6366f1", "#10b981"])
+        if feedback_list:
+            # Calculate average for each rating dimension
+            all_meetings = [f["ratings"].get("meeting", 3) for f in feedback_list if "ratings" in f]
+            all_knowledge = [f["ratings"].get("knowledge", 3) for f in feedback_list if "ratings" in f]
+            all_responsiveness = [f["ratings"].get("responsiveness", 3) for f in feedback_list if "ratings" in f]
+            all_communication = [f["ratings"].get("communication", 3) for f in feedback_list if "ratings" in f]
+            all_collaboration = [f["ratings"].get("collaboration", 3) for f in feedback_list if "ratings" in f]
+            
+            breakdown_data = {
+                "Meeting Contributions": np.mean(all_meetings) if all_meetings else 0,
+                "Knowledge Sharing": np.mean(all_knowledge) if all_knowledge else 0,
+                "Responsiveness": np.mean(all_responsiveness) if all_responsiveness else 0,
+                "Communication": np.mean(all_communication) if all_communication else 0,
+                "Collaboration": np.mean(all_collaboration) if all_collaboration else 0,
+            }
+            
+            fig_breakdown = go.Figure(data=[
+                go.Bar(
+                    x=list(breakdown_data.keys()),
+                    y=list(breakdown_data.values()),
+                    marker=dict(color=['#6366f1', '#8b5cf6', '#0ea5e9', '#10b981', '#f59e0b']),
+                    text=[f"{v:.1f}" for v in breakdown_data.values()],
+                    textposition="outside"
+                )
+            ])
+            fig_breakdown.update_layout(
+                template="plotly",
+                height=300,
+                margin=dict(l=40, r=40, t=40, b=80),
+                showlegend=False,
+                yaxis=dict(range=[0, 5])
             )
-        ])
-        fig_sentiment.update_layout(
-            template="plotly",
-            height=300,
-            showlegend=True
-        )
-        st.plotly_chart(fig_sentiment, use_container_width=True)
+            st.plotly_chart(fig_breakdown, use_container_width=True)
+        else:
+            st.info("No feedback data yet. Submit feedback to see breakdown.")
     
     # Feedback Received
     st.markdown('<div class="section-header">📥 Feedback Received</div>', unsafe_allow_html=True)
@@ -1497,19 +1545,94 @@ def page_social_score():
     st.plotly_chart(fig_radar, use_container_width=True)
     
     # Insights
-    st.markdown('<div class="section-header">💡 Social Insights</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header">💡 Social Insights & Recommendations</div>', unsafe_allow_html=True)
     
-    if social_data['collaboration_score'] < 75:
-        st.markdown(
-            '<div class="risk-banner">Collaboration score is below team average. Consider engaging with cross-functional projects.</div>',
-            unsafe_allow_html=True
-        )
+    insights_col1, insights_col2 = st.columns(2)
     
-    if social_data['mentorship_score'] > 80:
-        st.markdown(
-            '<div class="success-banner">Great mentorship contributions! You\'re making a positive impact on team growth.</div>',
-            unsafe_allow_html=True
-        )
+    with insights_col1:
+        st.markdown("#### 📈 Strengths")
+        
+        strengths = []
+        if social_data['email_response_time'] >= 80:
+            strengths.append("✅ Excellent email responsiveness - you're highly responsive to team communications")
+        if social_data['meeting_participation'] >= 80:
+            strengths.append("✅ Active meeting participation - great engagement in team discussions")
+        if social_data['collaboration_score'] >= 80:
+            strengths.append("✅ Strong cross-functional collaboration - valued team player")
+        if social_data['mentorship_score'] >= 80:
+            strengths.append("✅ Excellent mentorship - making positive impact on junior team members")
+        
+        if strengths:
+            for strength in strengths:
+                st.markdown(strength)
+        else:
+            st.markdown("Continue building on your social collaboration skills")
+    
+    with insights_col2:
+        st.markdown("#### 🎯 Areas for Development")
+        
+        development_areas = []
+        if social_data['email_response_time'] < 70:
+            development_areas.append("⚠️ Email responsiveness needs improvement - aim to respond within SLA")
+        if social_data['meeting_participation'] < 70:
+            development_areas.append("⚠️ Increase participation in team meetings - your voice matters")
+        if social_data['collaboration_score'] < 70:
+            development_areas.append("⚠️ Engage more in cross-functional projects - builds team relationships")
+        if social_data['mentorship_score'] < 70:
+            development_areas.append("⚠️ Consider mentoring junior team members - great growth opportunity")
+        
+        if development_areas:
+            for area in development_areas:
+                st.markdown(area)
+        else:
+            st.markdown("✅ All collaboration metrics are strong - maintain this momentum!")
+    
+    # Detailed insights cards
+    st.markdown("#### 📊 Detailed Metrics Analysis")
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        email_response = social_data['email_response_time']
+        email_status = "On Target" if email_response >= 80 else "Needs Attention" if email_response >= 60 else "Critical"
+        email_color = "#10b981" if email_response >= 80 else "#f59e0b" if email_response >= 60 else "#ef4444"
+        
+        st.markdown(f"""
+        <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%); border: 1px solid rgba(99, 102, 241, 0.2); border-left: 4px solid {email_color}; padding: 16px; border-radius: 8px;">
+            <div style="font-weight: 600; margin-bottom: 8px;">📧 Email Response Time</div>
+            <div style="font-size: 24px; font-weight: 800; color: {email_color}; margin-bottom: 4px;">{email_response:.0f}%</div>
+            <div style="font-size: 12px; color: #475569;">{email_status}</div>
+            <div style="font-size: 11px; color: #64748b; margin-top: 8px;">Average response within SLA</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col2:
+        meeting_score = social_data['meeting_participation']
+        meeting_status = "Excellent" if meeting_score >= 80 else "Good" if meeting_score >= 70 else "Improve"
+        meeting_color = "#10b981" if meeting_score >= 80 else "#f59e0b" if meeting_score >= 70 else "#ef4444"
+        
+        st.markdown(f"""
+        <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%); border: 1px solid rgba(99, 102, 241, 0.2); border-left: 4px solid {meeting_color}; padding: 16px; border-radius: 8px;">
+            <div style="font-weight: 600; margin-bottom: 8px;">🎤 Meeting Engagement</div>
+            <div style="font-size: 24px; font-weight: 800; color: {meeting_color}; margin-bottom: 4px;">{meeting_score:.0f}%</div>
+            <div style="font-size: 12px; color: #475569;">{meeting_status}</div>
+            <div style="font-size: 11px; color: #64748b; margin-top: 8px;">Active participation rate</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col3:
+        mentorship_score = social_data['mentorship_score']
+        mentorship_status = "Excellent" if mentorship_score >= 80 else "Good" if mentorship_score >= 70 else "Develop"
+        mentorship_color = "#10b981" if mentorship_score >= 80 else "#f59e0b" if mentorship_score >= 70 else "#ef4444"
+        
+        st.markdown(f"""
+        <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%); border: 1px solid rgba(99, 102, 241, 0.2); border-left: 4px solid {mentorship_color}; padding: 16px; border-radius: 8px;">
+            <div style="font-weight: 600; margin-bottom: 8px;">👥 Mentorship Score</div>
+            <div style="font-size: 24px; font-weight: 800; color: {mentorship_color}; margin-bottom: 4px;">{mentorship_score:.0f}%</div>
+            <div style="font-size: 12px; color: #475569;">{mentorship_status}</div>
+            <div style="font-size: 11px; color: #64748b; margin-top: 8px;">Team development impact</div>
+        </div>
+        """, unsafe_allow_html=True)
 
 # ============================================================================
 # PAGE: AI APPRAISAL ASSISTANT
