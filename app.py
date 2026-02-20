@@ -1124,7 +1124,12 @@ def main():
     
     # Sidebar
     with st.sidebar:
-        st.image("https://via.placeholder.com/150?text=EMP+DASH", use_column_width=True)
+        # Profile picture
+        st.markdown("""
+        <div style="text-align: center; padding: 20px 0;">
+            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=AlexMorgan" style="width: 120px; height: 120px; border-radius: 50%; border: 3px solid #00d4ff; display: block; margin: 0 auto;">
+        </div>
+        """, unsafe_allow_html=True)
         
         st.write(f"### {st.session_state.employee_name}")
         st.write(f"*{st.session_state.department}*")
