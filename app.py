@@ -199,9 +199,9 @@ def generate_mock_performance() -> Dict:
             {"name": "Model Accuracy", "target": 99, "actual": 101, "owner": "Self"},
         ],
         "projects": [
-            {"name": "ML Model Upgrade v2.1", "status": "In Progress", "progress": 72},
-            {"name": "Client Dashboard Migration", "status": "Completed", "progress": 100},
-            {"name": "Risk Profiling AI", "status": "In Progress", "progress": 58},
+            {"name": "ML Model Upgrade v2.1", "status": "Open", "progress": 72, "start_date": "2025-11-15", "end_date": "2026-03-31", "update": "On track"},
+            {"name": "Client Dashboard Migration", "status": "Closed", "progress": 100, "start_date": "2025-08-01", "end_date": "2026-01-31", "update": "Completed"},
+            {"name": "Risk Profiling AI", "status": "Open", "progress": 58, "start_date": "2025-12-01", "end_date": "2026-04-15", "update": "Minor delays"},
         ],
         "initiatives": [
             {"name": "Mentorship Program", "status": "Active", "contribution": "High"},
@@ -427,7 +427,14 @@ def page_overview():
             template="plotly_dark",
             hovermode="x unified",
             height=380,
-            margin=dict(l=40, r=40, t=40, b=40),
+            margin=dict(l=40, r=40, t=40, b=60),
+            legend=dict(
+                orientation="h",
+                yanchor="top",
+                y=-0.15,
+                xanchor="center",
+                x=0.5
+            )
         )
         st.plotly_chart(fig_trend, use_container_width=True)
     
@@ -478,6 +485,22 @@ def page_overview():
             </div>
             """, unsafe_allow_html=True)
             st.progress(proj["progress"] / 100)
+        
+        # Projects table
+        st.write("\n")
+        st.write("**Project Details**")
+        projects_df = pd.DataFrame([
+            {
+                "Project": proj["name"],
+                "Start Date": proj["start_date"],
+                "Target End": proj["end_date"],
+                "Status": proj["status"],
+                "Progress": f"{proj['progress']}%",
+                "Update": proj["update"]
+            }
+            for proj in perf_data["projects"]
+        ])
+        st.dataframe(projects_df, use_container_width=True, hide_index=True)
     
     with proj_col2:
         st.write("**Key Initiatives**")
