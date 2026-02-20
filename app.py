@@ -164,6 +164,32 @@ st.markdown("""
 # MOCK DATA GENERATION
 # ============================================================================
 
+def validate_performance_data(perf_data: Dict) -> Dict:
+    """Validate and fix performance data array lengths"""
+    if perf_data:
+        # Ensure all arrays have same length
+        months = perf_data.get("months", [])
+        aop = perf_data.get("aop", [])
+        actual = perf_data.get("actual", [])
+        
+        # Get the maximum length
+        max_len = max(len(months), len(aop), len(actual))
+        
+        # If lengths differ, pad with defaults
+        if len(months) < max_len:
+            months.extend([f"Month {i+1}" for i in range(len(months), max_len)])
+        if len(aop) < max_len:
+            aop.extend([100] * (max_len - len(aop)))
+        if len(actual) < max_len:
+            actual.extend([100] * (max_len - len(actual)))
+        
+        # Truncate to max_len if any were longer
+        perf_data["months"] = months[:max_len]
+        perf_data["aop"] = aop[:max_len]
+        perf_data["actual"] = actual[:max_len]
+    
+    return perf_data
+
 def initialize_session_state():
     """Initialize all session state variables"""
     if "employee_name" not in st.session_state:
@@ -595,6 +621,10 @@ def page_performance():
     st.markdown('<div class="section-header">📈 Performance & MIS</div>', unsafe_allow_html=True)
     
     perf_data = st.session_state.performance_data
+    
+    # Validate and fix data integrity
+    perf_data = validate_performance_data(perf_data)
+    st.session_state.performance_data = perf_data
     
     # ========== Edit Monthly Performance ==========
     st.markdown('<div class="section-header">📊 Edit Monthly Performance (Actual vs AOP)</div>', unsafe_allow_html=True)
